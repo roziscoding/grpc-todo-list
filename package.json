@@ -1,0 +1,28 @@
+{
+  "name": "grpc-todo-list",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:ts": "tsc",
+    "build:proto": "rm -rf generated/* && mkdir -p generated && grpc_tools_node_protoc --js_out=import_style=commonjs,binary:generated --grpc_out=generated --plugin=protoc-gen-grpc=node_modules/.bin/grpc_tools_node_protoc_plugin --plugin=protoc-gen-ts=./node_modules/.bin/protoc-gen-ts --ts_out=grpc=true:generated todo.proto",
+    "start": "node dist/index.js",
+    "build": "npm run build:proto && npm run build:ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/google-protobuf": "^3.7.2",
+    "@types/mongodb": "^3.3.8",
+    "grpc": "^1.24.2",
+    "grpc-tools": "^1.8.0",
+    "grpc_tools_node_protoc_ts": "^2.5.7",
+    "typescript": "^3.7.2"
+  },
+  "dependencies": {
+    "mongodb": "^3.3.3",
+    "sugar-env": "^1.5.7"
+  }
+}

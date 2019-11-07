@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+message ToDo {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  bool done = 4;
+}
+
+message ToDoId {
+  string id = 1;
+}
+
+message OperationResult {
+  bool ok = 1;
+  int32 status = 2;
+  string message = 3;
+  string info = 4;
+}
+
+message PaginatedQueryParams {
+  int32 page = 1;
+  int32 size = 2;
+}
+
+message PaginatedQueryResult {
+  message PaginatedQueryResultRange {
+    int32 from = 1;
+    int32 to = 2;
+  }
+
+  int32 count = 1;
+  int32 total = 2;
+  PaginatedQueryResultRange range = 3;
+  repeated ToDo results = 4;
+}
+
+service Todo {
+  rpc Create (ToDo) returns (OperationResult);
+  rpc List (PaginatedQueryParams) returns (PaginatedQueryResult);
+  rpc ToggleDone (ToDoId) returns (OperationResult);
+  rpc Delete (ToDoId) returns (OperationResult);
+}
