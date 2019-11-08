@@ -1,6 +1,6 @@
 import { OperationResult } from '../../generated/todo_pb'
 
-export function makeResult (ok: boolean, status: number, message: string, info: string) {
+export function makeResult (ok: boolean, status: number, message: string, info = '') {
   const result = new OperationResult()
   result.setOk(ok)
   result.setStatus(status)
