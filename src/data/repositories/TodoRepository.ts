@@ -1,32 +1,46 @@
-import { ToDo, PaginatedQueryResult } from '../../../generated/todo_pb'
+import { Writable } from 'stream'
 import { ObjectId, Collection, Db } from 'mongodb'
 import { buildTodo } from '../../domain/todo/Todo'
 import { SerializedTodo } from '../../domain/todo/SerializedTodo'
+import { ToDo, PaginatedQueryResult } from '../../../generated/todo_pb'
 
 type Id = string | ObjectId
 
+type CreateFn = (todo: ToDo) => Promise<void>
+type UpdateFn = (toto: ToDo) => Promise<void>
+type ExistsByIdFn = (id: Id) => Promise<boolean>
+type FindByIdFn = (id: Id) => Promise<ToDo | null>
+type SaveFn = (todo: ToDo) => Promise<void>
+type DeleteByIdFn = (id: Id) => Promise<void>
+type ListFn = (page?: number, size?: number) => Promise<PaginatedQueryResult>
+type ListStreamFn = (stream: Writable) => void
+
 export type TodoRepository = {
-  create: (todo: ToDo) => Promise<void>
-  update: (toto: ToDo) => Promise<void>
-  existsById: (id: Id) => Promise<boolean>
-  findById: (id: Id) => Promise<ToDo | null>
-  save: (todo: ToDo) => Promise<void>
-  deleteById: (id: Id) => Promise<void>
-  list: (page?: number, size?: number) => Promise<PaginatedQueryResult>
+  create: CreateFn
+  update: UpdateFn
+  existsById: ExistsByIdFn
+  findById: FindByIdFn
+  save: SaveFn
+  deleteById: DeleteByIdFn
+  list: ListFn
+  listStream: ListStreamFn
 }
 
-export function create (collection: Collection) {
-  return async (todo: ToDo) => {
+export function create (collection: Collection): CreateFn {
+  return async (todo) => {
     const { id, ...obj } = todo.toObject()
 
     await collection.insertOne({ _id: new ObjectId(id), ...obj })
   }
 }
-export async function update (collection: Collection, todo: ToDo): Promise<void> {
+
+export function update (collection: Collection): UpdateFn {
+  return async (todo) => {
   const { id, ...obj } = todo.toObject()
 
   const updateSet = { $set: { ...obj } }
   await collection.updateOne({ _id: new ObjectId(id) }, updateSet)
+}
 }
 
 async function findOneBy (collection: Collection, query: Record<string, any>): Promise<ToDo | null> {
@@ -37,9 +51,11 @@ async function findOneBy (collection: Collection, query: Record<string, any>): P
   return buildTodo(result)
 }
 
-export async function findOneById (collection: Collection, id: string | ObjectId): Promise<ToDo | null> {
+export function findOneById (collection: Collection): FindByIdFn {
+  return async (id) => {
   if (!ObjectId.isValid(id)) return null
   return findOneBy(collection, { _id: new ObjectId(id) })
+}
 }
 
 export async function existsBy (collection: Collection, query: Record<string, any>): Promise<boolean> {
@@ -47,24 +63,31 @@ export async function existsBy (collection: Collection, query: Record<string, an
     .then(count => count > 0)
 }
 
-export async function existsById (collection: Collection, id: Id) {
+export function existsById (collection: Collection): ExistsByIdFn {
+  return async (id) => {
   return existsBy(collection, { _id: new ObjectId(id) })
 }
+}
 
-export async function save (collection: Collection, todo: ToDo) {
-  const exists = await existsById(collection, todo.getId())
+export function save (collection: Collection): SaveFn {
+  return async (todo) => {
+    const exists = await existsById(collection)(todo.getId())
 
-  if (exists) return update(collection, todo)
+    if (exists) return update(collection)(todo)
 
   return create(collection)(todo)
 }
+}
 
-export async function deleteById (collection: Collection, id: Id): Promise<void> {
+export function deleteById (collection: Collection): DeleteByIdFn {
+  return async (id) => {
   if (!ObjectId.isValid(id)) return
   await collection.deleteOne({ _id: new ObjectId(id) })
 }
+}
 
-export async function list (collection: Collection, page: number, size: number): Promise<PaginatedQueryResult> {
+export function list (collection: Collection): ListFn {
+  return async (page = 0, size = 10) => {
   const skip = page * size
   const total = await collection.countDocuments()
 
@@ -86,17 +109,19 @@ export async function list (collection: Collection, page: number, size: number):
 
   return result
 }
+}
 
 export function getTodoRepository (db: Db): TodoRepository {
   const collection = db.collection('todos')
 
   return {
     create: create(collection),
-    update: (toto: ToDo) => update(collection, toto),
-    existsById: (id: Id) => existsById(collection, id),
-    findById: (id: Id) => findOneById(collection, id),
-    save: (todo: ToDo) => save(collection, todo),
-    deleteById: (id: Id) => deleteById(collection, id),
-    list: (page = 0, size = 10) => list(collection, page, size)
+    update: update(collection),
+    existsById: existsById(collection),
+    findById: findOneById(collection),
+    save: save(collection),
+    deleteById: deleteById(collection),
+    list: list(collection),
+    listStream: listStram(collection)
   }
 }
