@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "google/protobuf/empty.proto";
+
 message ToDo {
   string id = 1;
   string title = 2;
@@ -40,4 +42,5 @@ service Todo {
   rpc List (PaginatedQueryParams) returns (PaginatedQueryResult);
   rpc ToggleDone (ToDoId) returns (OperationResult);
   rpc Delete (ToDoId) returns (OperationResult);
+  rpc StreamList (google.protobuf.Empty) returns (stream ToDo);
 }

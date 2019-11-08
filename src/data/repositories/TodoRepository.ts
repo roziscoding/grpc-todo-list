@@ -36,26 +36,26 @@ export function create (collection: Collection): CreateFn {
 
 export function update (collection: Collection): UpdateFn {
   return async (todo) => {
-  const { id, ...obj } = todo.toObject()
+    const { id, ...obj } = todo.toObject()
 
-  const updateSet = { $set: { ...obj } }
-  await collection.updateOne({ _id: new ObjectId(id) }, updateSet)
-}
+    const updateSet = { $set: { ...obj } }
+    await collection.updateOne({ _id: new ObjectId(id) }, updateSet)
+  }
 }
 
 async function findOneBy (collection: Collection, query: Record<string, any>): Promise<ToDo | null> {
   const result = await collection.findOne(query)
 
   if (!result) return null
-  
+
   return buildTodo(result)
 }
 
 export function findOneById (collection: Collection): FindByIdFn {
   return async (id) => {
-  if (!ObjectId.isValid(id)) return null
-  return findOneBy(collection, { _id: new ObjectId(id) })
-}
+    if (!ObjectId.isValid(id)) return null
+    return findOneBy(collection, { _id: new ObjectId(id) })
+  }
 }
 
 export async function existsBy (collection: Collection, query: Record<string, any>): Promise<boolean> {
@@ -65,8 +65,8 @@ export async function existsBy (collection: Collection, query: Record<string, an
 
 export function existsById (collection: Collection): ExistsByIdFn {
   return async (id) => {
-  return existsBy(collection, { _id: new ObjectId(id) })
-}
+    return existsBy(collection, { _id: new ObjectId(id) })
+  }
 }
 
 export function save (collection: Collection): SaveFn {
@@ -75,40 +75,53 @@ export function save (collection: Collection): SaveFn {
 
     if (exists) return update(collection)(todo)
 
-  return create(collection)(todo)
-}
+    return create(collection)(todo)
+  }
 }
 
 export function deleteById (collection: Collection): DeleteByIdFn {
   return async (id) => {
-  if (!ObjectId.isValid(id)) return
-  await collection.deleteOne({ _id: new ObjectId(id) })
-}
+    if (!ObjectId.isValid(id)) return
+    await collection.deleteOne({ _id: new ObjectId(id) })
+  }
 }
 
 export function list (collection: Collection): ListFn {
   return async (page = 0, size = 10) => {
-  const skip = page * size
-  const total = await collection.countDocuments()
+    const skip = page * size
+    const total = await collection.countDocuments()
 
-  const results = await collection.find<SerializedTodo>()
-    .skip(skip)
-    .limit(size)
-    .toArray()
-    .then(todos => todos.map(buildTodo))
+    const results = await collection.find<SerializedTodo>()
+      .skip(skip)
+      .limit(size)
+      .toArray()
+      .then(todos => todos.map(buildTodo))
 
-  const range = new PaginatedQueryResult.PaginatedQueryResultRange()
-  range.setFrom(skip)
-  range.setTo(skip + results.length)
+    const range = new PaginatedQueryResult.PaginatedQueryResultRange()
+    range.setFrom(skip)
+    range.setTo(skip + results.length)
 
-  const result = new PaginatedQueryResult()
-  result.setCount(results.length)
-  result.setRange(range)
-  result.setTotal(total)
-  result.setResultsList(results)
+    const result = new PaginatedQueryResult()
+    result.setCount(results.length)
+    result.setRange(range)
+    result.setTotal(total)
+    result.setResultsList(results)
 
-  return result
+    return result
+  }
 }
+
+export function listStram (collection: Collection): ListStreamFn {
+  return async (stream: Writable) => {
+    const cursor = collection.find<SerializedTodo>()
+      .stream({ transform: JSON.stringify })
+
+    cursor.on('data', todo => stream.write(todo))
+    cursor.on('end', () => {
+      stream.end()
+      cursor.close()
+    })
+  }
 }
 
 export function getTodoRepository (db: Db): TodoRepository {

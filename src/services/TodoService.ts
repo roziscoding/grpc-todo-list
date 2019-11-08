@@ -1,3 +1,4 @@
+import { Writable } from 'stream'
 import { ObjectId } from 'mongodb'
 import { createTodo } from '../domain/todo/Todo'
 import { TodoNotFoundError } from './errors/TodoNotFoundError'
@@ -47,6 +48,7 @@ export type TodoService = {
   findById: FindByIdFn
   toggleTodo: ToggleTodoFn
   delete: DeleteFn
+  listStream: ListStreamFn
 }
 
 export function getTodoService (repository: TodoRepository): TodoService {
@@ -56,5 +58,6 @@ export function getTodoService (repository: TodoRepository): TodoService {
     findById: repository.findById,
     toggleTodo: toggleTodo(repository),
     delete: repository.deleteById,
+    listStream: repository.listStream
   }
 }
