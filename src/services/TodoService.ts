@@ -4,8 +4,15 @@ import { TodoNotFoundError } from './errors/TodoNotFoundError'
 import { TodoRepository } from '../data/repositories/TodoRepository'
 import { ToDo, PaginatedQueryResult } from '../../generated/todo_pb'
 
-export function create (repository: TodoRepository) {
-  return async (title: string, description: string) => {
+type CreateFn = (title: string, description: string) => Promise<ToDo>
+type ListFn = (page?: number, size?: number) => Promise<PaginatedQueryResult>
+type FindByIdFn = (id: string) => Promise<ToDo | null>
+type ToggleTodoFn = (id: string) => Promise<ToDo>
+type DeleteFn = (id: string) => Promise<void>
+type ListStreamFn = (stream: Writable) => void
+
+export function create (repository: TodoRepository): CreateFn {
+  return async (title, description) => {
     const todo = createTodo(new ObjectId(), title, description)
 
     await repository.save(todo)
@@ -14,12 +21,12 @@ export function create (repository: TodoRepository) {
   }
 }
 
-export function list (repository: TodoRepository) {
-  return async (page?: number, size?: number) => repository.list(page, size || 10)
+export function list (repository: TodoRepository): ListFn {
+  return async (page?, size?) => repository.list(page, size || 10)
 }
 
-export function toggleTodo (repository: TodoRepository) {
-  return async (id: string) => {
+export function toggleTodo (repository: TodoRepository): ToggleTodoFn {
+  return async (id) => {
     const todo = await repository.findById(id)
 
     if (!todo) {
@@ -35,19 +42,19 @@ export function toggleTodo (repository: TodoRepository) {
 }
 
 export type TodoService = {
-  create: (title: string, description: string) => Promise<ToDo>
-  list: (page?: number, size?: number) => Promise<PaginatedQueryResult>
-  findById: (id: string) => Promise<ToDo | null>
-  toggleTodo: (id: string) => Promise<ToDo>,
-  delete: (id: string) => Promise<void>
+  create: CreateFn
+  list: ListFn
+  findById: FindByIdFn
+  toggleTodo: ToggleTodoFn
+  delete: DeleteFn
 }
 
 export function getTodoService (repository: TodoRepository): TodoService {
   return {
     create: create(repository),
     list: list(repository),
-    findById: (id: string) => repository.findById(id),
+    findById: repository.findById,
     toggleTodo: toggleTodo(repository),
-    delete: (id: string) => repository.deleteById(id)
+    delete: repository.deleteById,
   }
 }
