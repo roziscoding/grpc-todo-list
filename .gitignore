@@ -180,3 +180,4 @@ $RECYCLE.BIN/
 dist
 generated
 .envrc
+tsconfig.tsbuildinfo
