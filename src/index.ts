@@ -14,7 +14,9 @@ server.start(config)
   })
 
 process.on('SIGINT', () => {
+  if (!serverInstance) process.exit(0)
   console.log('Received SIGINT. Shutting server down')
+
   serverInstance.tryShutdown(() => {
     console.log('Server stopped. Exiting now.')
     process.exit(0)
