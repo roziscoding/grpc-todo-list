@@ -16,7 +16,7 @@
   "devDependencies": {
     "@types/google-protobuf": "^3.7.2",
     "@types/mongodb": "^3.3.8",
-    "grpc": "^1.24.2",
+    "grpc": "^1.24.9",
     "grpc-tools": "^1.8.0",
     "grpc_tools_node_protoc_ts": "^2.5.7",
     "typescript": "^3.7.2"
